@@ -49,27 +49,27 @@ namespace GoogleDriveDownloader
             FilesResource.ListRequest listRequest = service.Files.List();
             FileList files = listRequest.Execute();
             IEnumerable<File> daFiles = files.Items;
-
+            daFiles = daFiles.Where(x => x.Shared == false && x.Shared != null).ToList();
+            Console.WriteLine("Percentage Complete:\n0%");
+            long? totalDownloadSize = 0;
+            double currentPercent = 0;
             foreach (var item in daFiles)
             {
-                if (item.Title == "Test.txt")
-                {
-                    var v = service.HttpClient.GetStreamAsync(item.DownloadUrl);
-                    var result = v.Result;
-                    using (var fileStream = System.IO.File.Create("Test.txt"))
-                    {
-                        result.CopyTo(fileStream);
-                    }
-                }               
+                totalDownloadSize += item.FileSize;
             }
-
-            
-            //FilesResource.InsertMediaUpload request = service.Files.Insert(body, stream, "text/plain");
-            //request.Upload();
-
-            //File file = request.ResponseBody;
-            //Console.WriteLine("File id: " + file.Id);
-            //Console.WriteLine("Press Enter to end this process.");
+            foreach (var item in daFiles)
+            {
+                currentPercent += Convert.ToDouble((double)item.FileSize / (double)totalDownloadSize);
+                var v = service.HttpClient.GetStreamAsync(item.DownloadUrl);
+                var result = v.Result;
+                string path = "..//..//files//" + item.Title;
+                using (var fileStream = System.IO.File.Create(path))
+                {
+                    result.CopyTo(fileStream);
+                }
+                Console.WriteLine((int)(currentPercent*100) + "%");
+            }
+            Console.WriteLine("Done!!!");
             Console.ReadLine();
         }
     }
